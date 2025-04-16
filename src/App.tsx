@@ -1,48 +1,49 @@
 import { useEffect, useState } from "react";
 import moment from "moment-timezone";
-
 import { CountDown } from "./components/Countdown";
 import { Form } from "./components/Form";
 
+interface CountdownParams {
+  origen: string;
+  date: string;
+  time: string;
+}
+
 function App() {
-  const [GUI, setGUI] = useState("FORM");
-  const [remainingTime, setRemainingTime] = useState("");
-  const [selectedTimezone, setSelectedTimezone] = useState(moment.tz.guess());
-  const [origen, setOrigen] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [created, setCreated] = useState(false);
+  const [countdownParams, setCountdownParams] = useState<CountdownParams | null>(null);
+  const [selectedTimezone] = useState(moment.tz.guess());
 
   useEffect(() => {
-    const queryString = window.location.search;
-    const searchParams = new URLSearchParams(queryString);
-    const origenParam = searchParams.get("origen");
-    const dateParam = searchParams.get("date");
-    const timeParam = searchParams.get("time");
+    const searchParams = new URLSearchParams(window.location.search);
+    const origen = searchParams.get("origen");
+    const date = searchParams.get("date");
+    const time = searchParams.get("time");
 
-    if (origenParam && dateParam && timeParam) {
-      setOrigen(origenParam);
-      setDate(dateParam);
-      setTime(timeParam);
-      setGUI("COUNTDOWN");
+    if (origen && date && time) {
+      setCountdownParams({ origen, date, time });
     }
-  }, [GUI, created]);
+  }, []);
+
+  const handleFormSubmit = (params: CountdownParams) => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      searchParams.append(key, value);
+    });
+    window.history.pushState(null, '', `?${searchParams.toString()}`);
+    setCountdownParams(params);
+  };
 
   return (
     <div className="max-w-5xl h-screen m-auto py-4 px-4 lg:px-0">
-      {GUI === "FORM" ? (
+      {!countdownParams ? (
         <div className="w-full h-full flex justify-center items-center">
-          <Form send={setCreated} />
+          <Form onSubmit={handleFormSubmit} />
         </div>
       ) : (
         <div className="w-full h-full flex justify-center items-center">
           <CountDown
-            origen={origen}
-            date={date}
-            time={time}
+            {...countdownParams}
             selectedTimezone={selectedTimezone}
-            setRemainingTime={setRemainingTime}
-            remainingTime={remainingTime}
           />
         </div>
       )}
